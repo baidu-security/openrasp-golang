@@ -3,7 +3,7 @@ package ormysql
 import (
 	"net"
 
-	"github.com/baidu/openrasp/support/orsql"
+	"github.com/baidu-security/openrasp-golang/support/orsql"
 	"github.com/go-sql-driver/mysql"
 )
 

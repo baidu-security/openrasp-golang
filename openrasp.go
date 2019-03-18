@@ -4,8 +4,8 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/baidu/openrasp/common"
-	"github.com/baidu/openrasp/config"
+	"github.com/baidu-security/openrasp-golang/common"
+	"github.com/baidu-security/openrasp-golang/config"
 )
 
 var workSpace *common.WorkSpace

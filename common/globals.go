@@ -3,8 +3,8 @@ package common
 import (
 	"net"
 
-	"github.com/baidu/openrasp/model"
-	"github.com/baidu/openrasp/utils"
+	"github.com/baidu-security/openrasp-golang/model"
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 type Globals struct {

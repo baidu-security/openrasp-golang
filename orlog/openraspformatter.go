@@ -3,7 +3,7 @@ package orlog
 import (
 	"bytes"
 
-	"github.com/baidu/openrasp/utils"
+	"github.com/baidu-security/openrasp-golang/utils"
 	"github.com/sirupsen/logrus"
 )
 

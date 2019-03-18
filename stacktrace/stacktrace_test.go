@@ -9,11 +9,11 @@ import (
 
 func TestStacktrace(t *testing.T) {
 	expect := []string{
-		"github.com/baidu/openrasp/stacktrace.TestStacktrace.func1",
+		"github.com/baidu-security/openrasp-golang/stacktrace.TestStacktrace.func1",
 		"runtime.call32",
 		"runtime.gopanic",
-		"github.com/baidu/openrasp/stacktrace.(*panicker).panic",
-		"github.com/baidu/openrasp/stacktrace.TestStacktrace",
+		"github.com/baidu-security/openrasp-golang/stacktrace.(*panicker).panic",
+		"github.com/baidu-security/openrasp-golang/stacktrace.TestStacktrace",
 	}
 	defer func() {
 		err := recover()
@@ -34,11 +34,11 @@ func TestStacktrace(t *testing.T) {
 
 func TestLogStacktrace(t *testing.T) {
 	expect := []string{
-		"/github.com/baidu/openrasp/stacktrace/stacktrace_test.go(github.com/baidu/openrasp/stacktrace.TestStacktrace.func1:47)",
+		"/github.com/baidu-security/openrasp-golang/stacktrace/stacktrace_test.go(github.com/baidu-security/openrasp-golang/stacktrace.TestStacktrace.func1:47)",
 		"/runtime/asm_amd64.s(runtime.call32:522)",
 		"/src/runtime/panic.go(runtime.gopanic:513)",
-		"/github.com/baidu/openrasp/stacktrace/stacktrace_test.go(github.com/baidu/openrasp/stacktrace.(*panicker).panic:67)",
-		"/github.com/baidu/openrasp/stacktrace/stacktrace_test.go(github.com/baidu/openrasp/stacktrace.TestLogStacktrace:61)",
+		"/github.com/baidu-security/openrasp-golang/stacktrace/stacktrace_test.go(github.com/baidu-security/openrasp-golang/stacktrace.(*panicker).panic:67)",
+		"/github.com/baidu-security/openrasp-golang/stacktrace/stacktrace_test.go(github.com/baidu-security/openrasp-golang/stacktrace.TestLogStacktrace:61)",
 	}
 	defer func() {
 		err := recover()

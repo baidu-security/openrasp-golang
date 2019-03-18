@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/baidu/openrasp/test"
+	"github.com/baidu-security/openrasp-golang/test"
 )
 
 func TestWorkDir(t *testing.T) {

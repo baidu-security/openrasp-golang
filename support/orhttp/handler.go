@@ -3,7 +3,7 @@ package orhttp
 import (
 	"net/http"
 
-	"github.com/baidu/openrasp/gls"
+	"github.com/baidu-security/openrasp-golang/gls"
 )
 
 // Wrap returns an http.Handler wrapping h

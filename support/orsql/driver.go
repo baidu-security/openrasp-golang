@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/baidu/openrasp"
-	"github.com/baidu/openrasp/model"
-	"github.com/baidu/openrasp/stacktrace"
-	"github.com/baidu/openrasp/utils"
+	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/model"
+	"github.com/baidu-security/openrasp-golang/stacktrace"
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 var (

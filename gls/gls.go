@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/baidu/openrasp/goid"
+	"github.com/baidu-security/openrasp-golang/goid"
 )
 
 type shardItemType map[int64]map[interface{}]interface{}

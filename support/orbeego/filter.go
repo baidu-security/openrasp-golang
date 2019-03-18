@@ -5,9 +5,9 @@ import (
 
 	"github.com/astaxie/beego"
 	beegocontext "github.com/astaxie/beego/context"
-	"github.com/baidu/openrasp"
-	"github.com/baidu/openrasp/model"
-	"github.com/baidu/openrasp/support/orhttp"
+	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/model"
+	"github.com/baidu-security/openrasp-golang/support/orhttp"
 )
 
 type beegoFilterStateKey struct{}

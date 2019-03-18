@@ -1,8 +1,8 @@
 package orsql
 
 import (
-	"github.com/baidu/openrasp"
-	"github.com/baidu/openrasp/model"
+	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/model"
 )
 
 type DbConnectionParam struct {

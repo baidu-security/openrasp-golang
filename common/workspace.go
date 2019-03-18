@@ -7,7 +7,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/baidu/openrasp/notify"
+	"github.com/baidu-security/openrasp-golang/notify"
 )
 
 type WorkDirCode int

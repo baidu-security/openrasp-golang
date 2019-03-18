@@ -1,6 +1,6 @@
 package orsql
 
-import "github.com/baidu/openrasp/model"
+import "github.com/baidu-security/openrasp-golang/model"
 
 type SqlErrorParam struct {
 	Server  string `json:"server"`

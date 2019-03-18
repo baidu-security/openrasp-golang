@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/baidu/openrasp/common"
-	"github.com/baidu/openrasp/orlog"
+	"github.com/baidu-security/openrasp-golang/common"
+	"github.com/baidu-security/openrasp-golang/orlog"
 	"github.com/sirupsen/logrus"
 )
 

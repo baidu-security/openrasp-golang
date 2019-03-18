@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/baidu/openrasp/model"
-	"github.com/baidu/openrasp/utils"
+	"github.com/baidu-security/openrasp-golang/model"
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 func CaptureHTTPRequestBody(req *http.Request, out *model.RequestBody) bool {

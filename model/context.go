@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"runtime"
 
-	"github.com/baidu/openrasp/utils"
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 type ContextInfo struct {

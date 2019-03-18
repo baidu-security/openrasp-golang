@@ -5,8 +5,8 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/baidu/openrasp"
-	"github.com/baidu/openrasp/model"
+	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/model"
 )
 
 func newConn(in driver.Conn, d *wrapDriver, dsnInfo DSNInfo) driver.Conn {
