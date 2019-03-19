@@ -1,6 +1,10 @@
 package orsql
 
-import "github.com/baidu-security/openrasp-golang/model"
+import (
+	"github.com/baidu-security/openrasp-golang/common"
+	"github.com/baidu-security/openrasp-golang/gls"
+	"github.com/baidu-security/openrasp-golang/model"
+)
 
 type SqlParam struct {
 	Query  string `json:"query"`
@@ -16,6 +20,10 @@ func NewSqlParam(server, query string) *SqlParam {
 }
 
 func (sp *SqlParam) AttackCheck() (model.InterceptCode, *model.AttackResult) {
-	//TODO call js
+	bitMaskValue := gls.Get("whiteMask")
+	bitMask, ok := bitMaskValue.(int)
+	if ok && (bitMask&int(common.Sql) == 0) {
+		//TODO call js
+	}
 	return model.Ignore, nil
 }

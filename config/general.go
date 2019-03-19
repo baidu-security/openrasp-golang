@@ -82,6 +82,12 @@ func (gc *GeneralConfig) GetInt64(key string) int64 {
 	return gc.general.GetInt64(key)
 }
 
+func (gc *GeneralConfig) GetStringMap(key string) map[string]interface{} {
+	gc.mu.RLock()
+	defer gc.mu.RUnlock()
+	return gc.general.GetStringMap(key)
+}
+
 func (gc *GeneralConfig) ReadConfig(in io.Reader) (err error) {
 	gc.mu.Lock()
 	defer func() {

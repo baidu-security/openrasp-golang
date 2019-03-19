@@ -3,6 +3,7 @@ package orhttp
 import (
 	"net/http"
 
+	openrasp "github.com/baidu-security/openrasp-golang"
 	"github.com/baidu-security/openrasp-golang/gls"
 )
 
@@ -29,6 +30,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		gls.Clear()
 	}()
 	gls.Set("request", req)
+	whiteUrl := openrasp.ExtractWhiteKey(req.URL)
+	whiteBitMask := openrasp.GetWhite().PrefixSearch(whiteUrl)
+	gls.Set("whiteMask", whiteBitMask)
 	w, resp := WrapResponseWriter(w)
 	defer func() {
 		if v := recover(); v != nil {

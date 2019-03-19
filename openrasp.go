@@ -13,6 +13,7 @@ var commonGlobals *common.Globals
 var basic *config.BasicConfig
 var general *config.GeneralConfig
 var logManager *LogManager
+var whiteList *WhiteList
 
 func init() {
 	workSpace = common.NewWorkSpace()
@@ -39,6 +40,13 @@ func init() {
 	logManager.UpdateFileWriter()
 	GetGeneral().AttachListener(logManager)
 
+	whiteList = NewWhiteList()
+	allWhiteMap := map[string]int{
+		"": common.AllType,
+	}
+	whiteList.Build(allWhiteMap)
+	GetGeneral().AttachListener(whiteList)
+
 	confDir, err := workSpace.GetDir(common.Conf)
 	if err != nil {
 		log.Printf("%v", err)
@@ -56,7 +64,7 @@ func init() {
 }
 
 func IsAvailable() bool {
-	return commonGlobals != nil && basic != nil && general != nil
+	return commonGlobals != nil && basic != nil && general != nil && logManager != nil
 }
 
 func GetWorkSpace() *common.WorkSpace {
@@ -77,4 +85,8 @@ func GetGeneral() *config.GeneralConfig {
 
 func GetLog() *LogManager {
 	return logManager
+}
+
+func GetWhite() *WhiteList {
+	return whiteList
 }

@@ -8,6 +8,28 @@ const (
 	Ignore
 )
 
+func InterceptCodeToString(code InterceptCode) string {
+	switch code {
+	case Block:
+		return "block"
+	case Log:
+		return "log"
+	default:
+		return "ignore"
+	}
+}
+
+func InterceptStringToCode(key string) InterceptCode {
+	switch key {
+	case "block":
+		return Block
+	case "ignore":
+		return Ignore
+	default:
+		return Log
+	}
+}
+
 type AttackResult struct {
 	PluginMessage    string `json:"plugin_message"`
 	PluginConfidence uint64 `json:"plugin_confidence"`
