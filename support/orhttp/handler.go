@@ -5,6 +5,7 @@ import (
 
 	openrasp "github.com/baidu-security/openrasp-golang"
 	"github.com/baidu-security/openrasp-golang/gls"
+	"github.com/baidu-security/openrasp-golang/model"
 )
 
 // Wrap returns an http.Handler wrapping h
@@ -29,10 +30,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		gls.Clear()
 	}()
-	gls.Set("request", req)
 	whiteUrl := openrasp.ExtractWhiteKey(req.URL)
 	whiteBitMask := openrasp.GetWhite().PrefixSearch(whiteUrl)
 	gls.Set("whiteMask", whiteBitMask)
+
+	clientIpHeader := openrasp.GetGeneral().GetString("clientip.header")
+	bodyMaxByte := openrasp.GetGeneral().GetInt("body.maxbytes")
+	requestInfo := model.NewRequestInfo(req, clientIpHeader, bodyMaxByte)
+	gls.Set("requestInfo", requestInfo)
+
 	w, resp := WrapResponseWriter(w)
 	defer func() {
 		if v := recover(); v != nil {

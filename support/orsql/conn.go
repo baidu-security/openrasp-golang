@@ -43,19 +43,11 @@ type conn struct {
 	connBeginTx        driver.ConnBeginTx
 }
 
-func (c *conn) interceptError(query string, resultError *error) {
+func (c *conn) interceptError(param string, resultError *error) {
 	if *resultError == driver.ErrSkip {
 		return
 	}
-	hit, errCode, errMsg := c.driver.errorInterceptor(resultError)
-	if hit {
-		sqlErrorParam := NewSqlErrorParam(c.driver.driverName, query, errCode, errMsg)
-		interceptCode, _ := sqlErrorParam.AttackCheck()
-		//TODO log
-		if interceptCode == model.Block {
-			panic(openrasp.ErrBlock)
-		}
-	}
+	c.driver.interceptError(param, resultError)
 }
 
 func (c *conn) queryAttackCheck(query string) {

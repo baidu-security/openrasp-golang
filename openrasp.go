@@ -14,6 +14,7 @@ var basic *config.BasicConfig
 var general *config.GeneralConfig
 var logManager *LogManager
 var whiteList *WhiteList
+var complete bool
 
 func init() {
 	workSpace = common.NewWorkSpace()
@@ -41,11 +42,8 @@ func init() {
 	GetGeneral().AttachListener(logManager)
 
 	whiteList = NewWhiteList()
-	allWhiteMap := map[string]int{
-		"": common.AllType,
-	}
-	whiteList.Build(allWhiteMap)
 	GetGeneral().AttachListener(whiteList)
+	complete = true
 
 	confDir, err := workSpace.GetDir(common.Conf)
 	if err != nil {
@@ -63,8 +61,8 @@ func init() {
 	}
 }
 
-func IsAvailable() bool {
-	return commonGlobals != nil && basic != nil && general != nil && logManager != nil
+func IsComplete() bool {
+	return complete
 }
 
 func GetWorkSpace() *common.WorkSpace {

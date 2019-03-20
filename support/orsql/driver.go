@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/stacktrace"
 	"github.com/baidu-security/openrasp-golang/utils"
@@ -146,12 +147,35 @@ type wrapDriver struct {
 	errorInterceptor ErrorInterceptorFunc
 }
 
-func (d *wrapDriver) interceptError(name string, err *error) {
+func (d *wrapDriver) interceptError(param string, err *error) {
 	hit, errCode, errMsg := d.errorInterceptor(err)
 	if hit {
-		sqlErrorParam := NewSqlErrorParam(d.driverName, name, errCode, errMsg)
-		interceptCode, _ := sqlErrorParam.AttackCheck()
-		//TODO log
+		sqlErrorParam := NewSqlErrorParam(d.driverName, param, errCode, errMsg)
+		interceptCode, attackResult := sqlErrorParam.AttackCheck()
+		requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
+		if ok {
+			if interceptCode != model.Ignore {
+				attackLog := model.AttackLog{
+					AttackResult: attackResult,
+					Server:       openrasp.GetGlobals().Server,
+					System:       openrasp.GetGlobals().System,
+					RequestInfo:  requestInfo,
+					AttackParams: sqlErrorParam,
+					SourceCode:   []string{},
+					StackTrace:   strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, openrasp.GetGeneral().GetInt("log.maxstack"))), "\n"),
+					RaspId:       openrasp.GetGlobals().RaspId,
+					AppId:        openrasp.GetBasic().GetString("cloud.app_id"),
+					ServerIp:     openrasp.GetGlobals().HttpAddr,
+					EventTime:    utils.CurrentISO8601Time(),
+					EventType:    "attack",
+					AttackType:   "sql_exception",
+				}
+				attackLogString := attackLog.String()
+				if len(attackLogString) > 0 {
+					openrasp.GetLog().AlarmInfo(attackLogString)
+				}
+			}
+		}
 		if interceptCode == model.Block {
 			panic(openrasp.ErrBlock)
 		}

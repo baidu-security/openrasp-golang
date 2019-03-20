@@ -100,6 +100,10 @@ func (lm *LogManager) GetPolicy() *WrapLogger {
 	return lm.policy
 }
 
+func (lm *LogManager) GetAlarm() *WrapLogger {
+	return lm.alarm
+}
+
 func (lm *LogManager) UpdateFileWriter() {
 	maxBackup := GetGeneral().GetInt("log.maxbackup")
 	capacity := GetGeneral().GetInt64("log.maxburst")
@@ -115,4 +119,8 @@ func (lm *LogManager) OnConfigUpdate() {
 
 func (lm *LogManager) PolicyInfo(message string) {
 	lm.GetPolicy().Info(message)
+}
+
+func (lm *LogManager) AlarmInfo(message string) {
+	lm.GetAlarm().Info(message)
 }

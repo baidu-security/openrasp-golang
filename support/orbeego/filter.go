@@ -17,7 +17,7 @@ type beegoFilterState struct {
 }
 
 func init() {
-	if openrasp.IsAvailable() {
+	if openrasp.IsComplete() {
 		if v, err := beego.GetConfig("string", "HttpAddr", ""); err == nil {
 			openrasp.GetGlobals().SetHttpAddr(v.(string))
 		}

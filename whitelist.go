@@ -17,6 +17,10 @@ func NewWhiteList() *WhiteList {
 	wl := &WhiteList{
 		dat: common.NewDoubleArrayTrie(),
 	}
+	allWhiteMap := map[string]int{
+		"": common.AllType,
+	}
+	wl.Build(allWhiteMap)
 	return wl
 }
 

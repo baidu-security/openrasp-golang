@@ -222,6 +222,9 @@ func (dat *DoubleArrayTrie) commonPrefixSearch(key string, pos, length, nodePos 
 		nodePos = 0
 	}
 	var result []int
+	if dat.base == nil || dat.check == nil {
+		return result
+	}
 	b := dat.base[nodePos]
 	var n int
 	var p int

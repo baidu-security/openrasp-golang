@@ -23,8 +23,9 @@ type RequestInfo struct {
 }
 
 type RequestBody struct {
-	Raw  string     `json:"body"`
-	Form url.Values `json:"form"`
+	Raw       string     `json:"-"`
+	Truncated string     `json:"body"`
+	Form      url.Values `json:"form"`
 }
 
 func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) *RequestInfo {
@@ -36,6 +37,7 @@ func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) 
 		UrlPath:      request.URL.Path,
 		AttackSource: request.RemoteAddr,
 		ClientIp:     request.Header.Get(clientIpHeader),
+		Header:       request.Header,
 		RequestId:    utils.GenerateRequestId(),
 	}
 	ri.SetRequestBody(rb)
@@ -78,7 +80,7 @@ func NewRequestBody(req *http.Request, size int) *RequestBody {
 		for k, v := range bc.request.PostForm {
 			vcopy := make([]string, len(v))
 			for i := range vcopy {
-				vcopy[i] = utils.TruncateString(v[i], size)
+				vcopy[i] = v[i]
 			}
 			postForm[k] = vcopy
 		}
@@ -89,7 +91,8 @@ func NewRequestBody(req *http.Request, size int) *RequestBody {
 	r := io.MultiReader(bytes.NewReader(bc.buffer.Bytes()), bc.originalBody)
 	all, err := ioutil.ReadAll(r)
 	if err == nil {
-		out.Raw = utils.TruncateString(string(all), size)
+		out.Raw = string(all)
+		out.Truncated = utils.TruncateString(string(all), size)
 	}
 	return out
 }

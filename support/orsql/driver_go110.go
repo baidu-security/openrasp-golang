@@ -31,6 +31,7 @@ func (d *wrapConnector) Connect(ctx context.Context) (driver.Conn, error) {
 	dsnInfo := d.driver.dsnParser(d.name)
 	conn, err := d.connect(ctx)
 	if err != nil {
+		d.driver.interceptError(d.name, &err)
 		return nil, err
 	}
 	return newConn(conn, d.driver, dsnInfo), nil

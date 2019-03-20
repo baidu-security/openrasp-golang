@@ -32,11 +32,8 @@ func (sep *SqlErrorParam) AttackCheck() (model.InterceptCode, *model.AttackResul
 	bitMask, ok := bitMaskValue.(int)
 	if ok && (bitMask&int(common.SqlException) == 0) {
 		if sep.Server == "mysql" {
-			switch sep.ErrCode {
-			case "1060", "1062", "1064", "1105", "1367", "1690":
-				ar := model.NewAttackResult("block", sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
-				return model.Block, ar
-			}
+			ar := model.NewAttackResult("block", sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
+			return model.Block, ar
 		}
 	}
 	return model.Ignore, nil
