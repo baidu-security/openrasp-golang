@@ -6,6 +6,7 @@ import (
 
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/config"
+	v8 "github.com/baidu-security/openrasp-v8/go"
 )
 
 var workSpace *common.WorkSpace
@@ -13,6 +14,7 @@ var commonGlobals *common.Globals
 var basic *config.BasicConfig
 var general *config.GeneralConfig
 var logManager *LogManager
+var pluginManager *PluginManager
 var whiteList *WhiteList
 var complete bool
 
@@ -43,22 +45,41 @@ func init() {
 
 	whiteList = NewWhiteList()
 	GetGeneral().AttachListener(whiteList)
-	complete = true
+
+	if !v8.Initialize(logManager.PluginInfo) {
+		log.Printf("Unable to init v8.")
+		return
+	}
 
 	confDir, err := workSpace.GetDir(common.Conf)
 	if err != nil {
 		log.Printf("%v", err)
-	} else {
-		path := filepath.Join(confDir, "openrasp.yml")
-		err := basic.LoadProperties(path)
-		if err != nil {
-			log.Printf("%v", err)
-		}
+		return
 	}
+
+	pluginDir, err := workSpace.GetDir(common.Plugins)
+	if err != nil {
+		log.Printf("%v", err)
+		return
+	}
+	pluginManager = NewPluginManager(pluginDir)
+
+	complete = true
+
+	yamlPath := filepath.Join(confDir, "openrasp.yml")
+	err = basic.LoadYaml(yamlPath)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+
 	if !basic.GetBool("cloud.enable") {
+		general.LoadYaml(yamlPath)
 		workSpace.StartWatch(common.Conf)
 		workSpace.RegisterListener(common.Conf, general)
+		workSpace.StartWatch(common.Plugins)
+		workSpace.RegisterListener(common.Plugins, pluginManager)
 	}
+	InitContextGetters()
 }
 
 func IsComplete() bool {

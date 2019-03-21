@@ -100,6 +100,10 @@ func (lm *LogManager) GetPolicy() *WrapLogger {
 	return lm.policy
 }
 
+func (lm *LogManager) GetPlugin() *WrapLogger {
+	return lm.plugin
+}
+
 func (lm *LogManager) GetAlarm() *WrapLogger {
 	return lm.alarm
 }
@@ -119,6 +123,10 @@ func (lm *LogManager) OnConfigUpdate() {
 
 func (lm *LogManager) PolicyInfo(message string) {
 	lm.GetPolicy().Info(message)
+}
+
+func (lm *LogManager) PluginInfo(message string) {
+	lm.GetPlugin().Info(message)
 }
 
 func (lm *LogManager) AlarmInfo(message string) {

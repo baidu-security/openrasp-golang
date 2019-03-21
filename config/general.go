@@ -112,3 +112,7 @@ func (gc *GeneralConfig) OnUpdate(absPath string) {
 		gc.ReadConfig(raw)
 	}
 }
+
+func (gc *GeneralConfig) LoadYaml(path string) {
+	gc.OnUpdate(path)
+}

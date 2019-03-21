@@ -34,6 +34,10 @@ var expectedOffsetDict = map[string]uintptr{
 	"go1.11.2": 152,
 	"go1.11.3": 152,
 	"go1.11.4": 152,
+	"go1.11.5": 152,
+	"go1.11.6": 152,
+	"go1.12":   152,
+	"go1.12.1": 152,
 }
 
 //after go1.9 goid offset in g struct is 152, which used as default offset value

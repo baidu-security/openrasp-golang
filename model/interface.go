@@ -5,5 +5,5 @@ type PolicyChecker interface {
 }
 
 type AttackChecker interface {
-	AttackCheck() (InterceptCode, *AttackResult)
+	AttackCheck() []*AttackResult
 }

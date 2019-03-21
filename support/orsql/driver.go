@@ -151,32 +151,38 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 	hit, errCode, errMsg := d.errorInterceptor(err)
 	if hit {
 		sqlErrorParam := NewSqlErrorParam(d.driverName, param, errCode, errMsg)
-		interceptCode, attackResult := sqlErrorParam.AttackCheck()
-		requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
-		if ok {
-			if interceptCode != model.Ignore {
-				attackLog := model.AttackLog{
-					AttackResult: attackResult,
-					Server:       openrasp.GetGlobals().Server,
-					System:       openrasp.GetGlobals().System,
-					RequestInfo:  requestInfo,
-					AttackParams: sqlErrorParam,
-					SourceCode:   []string{},
-					StackTrace:   strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, openrasp.GetGeneral().GetInt("log.maxstack"))), "\n"),
-					RaspId:       openrasp.GetGlobals().RaspId,
-					AppId:        openrasp.GetBasic().GetString("cloud.app_id"),
-					ServerIp:     openrasp.GetGlobals().HttpAddr,
-					EventTime:    utils.CurrentISO8601Time(),
-					EventType:    "attack",
-					AttackType:   "sql_exception",
-				}
-				attackLogString := attackLog.String()
-				if len(attackLogString) > 0 {
-					openrasp.GetLog().AlarmInfo(attackLogString)
+		shouldBlock := false
+		if openrasp.RequestInfoAvailable() {
+			requestInfo, _ := gls.Get("requestInfo").(*model.RequestInfo)
+			attackResults := sqlErrorParam.AttackCheck()
+			for _, attackResult := range attackResults {
+				if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {
+					attackLog := model.AttackLog{
+						AttackResult: attackResult,
+						Server:       openrasp.GetGlobals().Server,
+						System:       openrasp.GetGlobals().System,
+						RequestInfo:  requestInfo,
+						AttackParams: sqlErrorParam,
+						SourceCode:   []string{},
+						StackTrace:   strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, openrasp.GetGeneral().GetInt("log.maxstack"))), "\n"),
+						RaspId:       openrasp.GetGlobals().RaspId,
+						AppId:        openrasp.GetBasic().GetString("cloud.app_id"),
+						ServerIp:     openrasp.GetGlobals().HttpAddr,
+						EventTime:    utils.CurrentISO8601Time(),
+						EventType:    "attack",
+						AttackType:   "sql_exception",
+					}
+					attackLogString := attackLog.String()
+					if len(attackLogString) > 0 {
+						openrasp.GetLog().AlarmInfo(attackLogString)
+					}
+					if interceptCode == model.Block {
+						shouldBlock = true
+					}
 				}
 			}
 		}
-		if interceptCode == model.Block {
+		if shouldBlock {
 			panic(openrasp.ErrBlock)
 		}
 	}

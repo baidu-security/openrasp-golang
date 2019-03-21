@@ -49,6 +49,40 @@ func NewAttackResult(state, message, algorithm, name string, confidence uint64) 
 	return ar
 }
 
+func NewAttackResultFromMap(m map[string]interface{}) *AttackResult {
+	ar := &AttackResult{}
+	for k, v := range m {
+		switch k {
+		case "action":
+			if state, ok := v.(string); ok {
+				ar.InterceptState = state
+			}
+		case "message":
+			if message, ok := v.(string); ok {
+				ar.PluginMessage = message
+			}
+		case "confidence":
+			if confidence, ok := v.(int); ok {
+				ar.PluginConfidence = uint64(confidence)
+			}
+		case "name":
+			if name, ok := v.(string); ok {
+				ar.PluginName = name
+			}
+		case "algorithm":
+			if algorithm, ok := v.(string); ok {
+				ar.PluginAlgorithm = algorithm
+			}
+		default:
+		}
+	}
+	return ar
+}
+
+func (ar *AttackResult) GetInterceptState() InterceptCode {
+	return InterceptStringToCode(ar.InterceptState)
+}
+
 type PolicyResult struct {
 	EventType string `json:"event_type"`
 	Message   string `json:"message"`

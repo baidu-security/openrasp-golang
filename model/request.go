@@ -2,13 +2,41 @@ package model
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"runtime"
 
 	"github.com/baidu-security/openrasp-golang/utils"
 )
+
+type ContextServer struct {
+	Language string `json:"language"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	OS       string `json:"os"`
+}
+
+func NewContextServer() *ContextServer {
+	cs := &ContextServer{
+		Language: "golang",
+		Name:     "GO",
+		Version:  runtime.Version(),
+		OS:       utils.GetOs(),
+	}
+	return cs
+}
+
+func (cs *ContextServer) Bytes() []byte {
+	b, err := json.Marshal(cs)
+	if err != nil {
+		return nil
+	} else {
+		return b
+	}
+}
 
 type RequestInfo struct {
 	Method       string      `json:"request_method"`
@@ -19,6 +47,13 @@ type RequestInfo struct {
 	ClientIp     string      `json:"client_ip"`
 	RequestId    string      `json:"request_id"`
 	Header       http.Header `json:"header"`
+	Query        string      `json:"-"`
+	Protocol     string      `json:"-"`
+	RemoteAddr   string      `json:"-"`
+	Get          url.Values  `json:"-"`
+	AppBasePath  string      `json:"-"`
+	HeaderBytes  []byte      `json:"-"`
+	GetBytes     []byte      `json:"-"`
 	*RequestBody
 }
 
@@ -39,7 +74,18 @@ func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) 
 		ClientIp:     request.Header.Get(clientIpHeader),
 		Header:       request.Header,
 		RequestId:    utils.GenerateRequestId(),
+		Query:        request.URL.RawQuery,
+		Protocol:     request.Proto,
+		RemoteAddr:   request.RemoteAddr,
+		Get:          request.URL.Query(),
+		AppBasePath:  "",
 	}
+	headerBytes, _ := json.Marshal(ri.Header)
+	ri.HeaderBytes = headerBytes
+
+	getBytes, _ := json.Marshal(ri.Get)
+	ri.GetBytes = getBytes
+
 	ri.SetRequestBody(rb)
 	return ri
 }

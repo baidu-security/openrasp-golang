@@ -29,7 +29,7 @@ func (bc *BasicConfig) GetString(key string) string {
 	return bc.basic.GetString(key)
 }
 
-func (bc *BasicConfig) LoadProperties(path string) error {
+func (bc *BasicConfig) LoadYaml(path string) error {
 	bc.basic.SetConfigType("yaml")
 	bc.basic.SetConfigFile(path)
 	err := bc.basic.ReadInConfig()

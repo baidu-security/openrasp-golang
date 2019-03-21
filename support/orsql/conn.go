@@ -4,9 +4,13 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
+	"strings"
 
 	openrasp "github.com/baidu-security/openrasp-golang"
+	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
+	"github.com/baidu-security/openrasp-golang/stacktrace"
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 func newConn(in driver.Conn, d *wrapDriver, dsnInfo DSNInfo) driver.Conn {
@@ -52,8 +56,38 @@ func (c *conn) interceptError(param string, resultError *error) {
 
 func (c *conn) queryAttackCheck(query string) {
 	sqlParam := NewSqlParam(c.driver.driverName, query)
-	interceptCode, _ := sqlParam.AttackCheck()
-	if interceptCode == model.Block {
+	shouldBlock := false
+	if openrasp.RequestInfoAvailable() {
+		requestInfo, _ := gls.Get("requestInfo").(*model.RequestInfo)
+		attackResults := sqlParam.AttackCheck()
+		for _, attackResult := range attackResults {
+			if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {
+				attackLog := model.AttackLog{
+					AttackResult: attackResult,
+					Server:       openrasp.GetGlobals().Server,
+					System:       openrasp.GetGlobals().System,
+					RequestInfo:  requestInfo,
+					AttackParams: sqlParam,
+					SourceCode:   []string{},
+					StackTrace:   strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, openrasp.GetGeneral().GetInt("log.maxstack"))), "\n"),
+					RaspId:       openrasp.GetGlobals().RaspId,
+					AppId:        openrasp.GetBasic().GetString("cloud.app_id"),
+					ServerIp:     openrasp.GetGlobals().HttpAddr,
+					EventTime:    utils.CurrentISO8601Time(),
+					EventType:    "attack",
+					AttackType:   "sql",
+				}
+				attackLogString := attackLog.String()
+				if len(attackLogString) > 0 {
+					openrasp.GetLog().AlarmInfo(attackLogString)
+				}
+				if interceptCode == model.Block {
+					shouldBlock = true
+				}
+			}
+		}
+	}
+	if shouldBlock {
 		panic(openrasp.ErrBlock)
 	}
 }

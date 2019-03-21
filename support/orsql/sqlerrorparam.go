@@ -27,14 +27,15 @@ func (sep *SqlErrorParam) buildPluginMessage() string {
 	return sep.Server + " error " + sep.ErrCode + " detected: " + sep.ErrMsg
 }
 
-func (sep *SqlErrorParam) AttackCheck() (model.InterceptCode, *model.AttackResult) {
+func (sep *SqlErrorParam) AttackCheck() []*model.AttackResult {
 	bitMaskValue := gls.Get("whiteMask")
 	bitMask, ok := bitMaskValue.(int)
+	var results []*model.AttackResult
 	if ok && (bitMask&int(common.SqlException) == 0) {
 		if sep.Server == "mysql" {
 			ar := model.NewAttackResult("block", sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
-			return model.Block, ar
+			results = append(results, ar)
 		}
 	}
-	return model.Ignore, nil
+	return results
 }
