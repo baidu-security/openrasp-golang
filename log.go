@@ -7,6 +7,7 @@ import (
 
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/orlog"
+	"github.com/baidu-security/openrasp-golang/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,7 +30,7 @@ type WrapLogger struct {
 	dirCode  common.WorkDirCode
 }
 
-func NewWrapLogger(dirCode common.WorkDirCode) (*WrapLogger, error) {
+func NewWrapLogger(dirCode common.WorkDirCode, f *orlog.OpenRASPFormatter) (*WrapLogger, error) {
 	var logFilename string
 	logDir, err := workSpace.GetDir(dirCode)
 	if err != nil {
@@ -37,7 +38,7 @@ func NewWrapLogger(dirCode common.WorkDirCode) (*WrapLogger, error) {
 	} else {
 		logFilename = filepath.Join(logDir, dirCodeToName(dirCode))
 		logrusLogger := logrus.New()
-		logrusLogger.Formatter = &orlog.OpenRASPFormatter{}
+		logrusLogger.Formatter = f
 		wl := &WrapLogger{
 			logger:   logrusLogger,
 			filename: logFilename,
@@ -71,19 +72,23 @@ func dirCodeToName(dirCode common.WorkDirCode) string {
 }
 
 func InitLogManager() (*LogManager, error) {
-	alarmLogger, err := NewWrapLogger(common.LogAlarm)
+	alarmLogger, err := NewWrapLogger(common.LogAlarm, &orlog.OpenRASPFormatter{})
 	if err != nil {
 		return nil, err
 	}
-	policyLogger, err := NewWrapLogger(common.LogPolicy)
+	policyLogger, err := NewWrapLogger(common.LogPolicy, &orlog.OpenRASPFormatter{})
 	if err != nil {
 		return nil, err
 	}
-	pluginLogger, err := NewWrapLogger(common.LogPlugin)
+	pluginLogger, err := NewWrapLogger(common.LogPlugin, &orlog.OpenRASPFormatter{
+		TimestampFormat:      utils.ISO8601TimestampFormat,
+		WithTimestamp:        true,
+		WithoutLineSeparator: true,
+	})
 	if err != nil {
 		return nil, err
 	}
-	raspLogger, err := NewWrapLogger(common.LogRasp)
+	raspLogger, err := NewWrapLogger(common.LogRasp, &orlog.OpenRASPFormatter{})
 	if err != nil {
 		return nil, err
 	}

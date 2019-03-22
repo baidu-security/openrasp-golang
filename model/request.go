@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"strings"
 
 	"github.com/baidu-security/openrasp-golang/utils"
 )
@@ -39,21 +40,21 @@ func (cs *ContextServer) Bytes() []byte {
 }
 
 type RequestInfo struct {
-	Method       string      `json:"request_method"`
-	UrlFull      string      `json:"url"`
-	UrlHost      string      `json:"target"`
-	UrlPath      string      `json:"path"`
-	AttackSource string      `json:"attack_source"`
-	ClientIp     string      `json:"client_ip"`
-	RequestId    string      `json:"request_id"`
-	Header       http.Header `json:"header"`
-	Query        string      `json:"-"`
-	Protocol     string      `json:"-"`
-	RemoteAddr   string      `json:"-"`
-	Get          url.Values  `json:"-"`
-	AppBasePath  string      `json:"-"`
-	HeaderBytes  []byte      `json:"-"`
-	GetBytes     []byte      `json:"-"`
+	Method       string            `json:"request_method"`
+	UrlFull      string            `json:"url"`
+	UrlHost      string            `json:"target"`
+	UrlPath      string            `json:"path"`
+	AttackSource string            `json:"attack_source"`
+	ClientIp     string            `json:"client_ip"`
+	RequestId    string            `json:"request_id"`
+	Header       map[string]string `json:"header"`
+	Query        string            `json:"-"`
+	Protocol     string            `json:"-"`
+	RemoteAddr   string            `json:"-"`
+	Get          map[string]string `json:"-"`
+	AppBasePath  string            `json:"-"`
+	HeaderBytes  []byte            `json:"-"`
+	GetBytes     []byte            `json:"-"`
 	*RequestBody
 }
 
@@ -72,12 +73,12 @@ func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) 
 		UrlPath:      request.URL.Path,
 		AttackSource: request.RemoteAddr,
 		ClientIp:     request.Header.Get(clientIpHeader),
-		Header:       request.Header,
+		Header:       joinHeader(request.Header),
 		RequestId:    utils.GenerateRequestId(),
 		Query:        request.URL.RawQuery,
 		Protocol:     request.Proto,
 		RemoteAddr:   request.RemoteAddr,
-		Get:          request.URL.Query(),
+		Get:          extractHeader(request.URL.Query()),
 		AppBasePath:  "",
 	}
 	headerBytes, _ := json.Marshal(ri.Header)
@@ -88,6 +89,22 @@ func NewRequestInfo(request *http.Request, clientIpHeader string, bodySize int) 
 
 	ri.SetRequestBody(rb)
 	return ri
+}
+
+func joinHeader(source map[string][]string) map[string]string {
+	joinMap := make(map[string]string, len(source))
+	for k, headers := range source {
+		joinMap[k] = strings.Join(headers, ", ")
+	}
+	return joinMap
+}
+
+func extractHeader(source map[string][]string) map[string]string {
+	extractMap := make(map[string]string, len(source))
+	for k, _ := range source {
+		extractMap[k] = http.Header(source).Get(k)
+	}
+	return extractMap
 }
 
 func (ri *RequestInfo) SetRequestBody(rb *RequestBody) {
