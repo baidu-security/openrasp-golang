@@ -66,28 +66,31 @@ func sqlConnectionPolicyCheck(d *wrapDriver, name string) (model.InterceptCode, 
 }
 
 func Open(driverName, dataSourceName string) (*sql.DB, error) {
-	d, ok := drivers[driverName]
-	var interceptCode model.InterceptCode = model.Ignore
-	var policyLogString string
-	if ok {
-		interceptCode, policyLogString = sqlConnectionPolicyCheck(d, dataSourceName)
-		if interceptCode == model.Block {
-			if len(policyLogString) > 0 {
+	if openrasp.IsComplete() {
+		d, ok := drivers[driverName]
+		var interceptCode model.InterceptCode = model.Ignore
+		var policyLogString string
+		if ok {
+			interceptCode, policyLogString = sqlConnectionPolicyCheck(d, dataSourceName)
+			if interceptCode == model.Block {
+				if len(policyLogString) > 0 {
+					openrasp.GetLog().PolicyInfo(policyLogString)
+				}
+				panic(openrasp.ErrBlock)
+			}
+		}
+		db, err := sql.Open(wrapDriverName(driverName), dataSourceName)
+		if err != nil {
+			d.interceptError(dataSourceName, &err)
+			return nil, err
+		} else {
+			if interceptCode == model.Log {
 				openrasp.GetLog().PolicyInfo(policyLogString)
 			}
-			panic(openrasp.ErrBlock)
 		}
+		return db, err
 	}
-	db, err := sql.Open(wrapDriverName(driverName), dataSourceName)
-	if err != nil {
-		d.interceptError(dataSourceName, &err)
-		return nil, err
-	} else {
-		if interceptCode == model.Log {
-			openrasp.GetLog().PolicyInfo(policyLogString)
-		}
-	}
-	return db, err
+	return sql.Open(driverName, dataSourceName)
 }
 
 func Wrap(driver driver.Driver, opts ...WrapOption) driver.Driver {

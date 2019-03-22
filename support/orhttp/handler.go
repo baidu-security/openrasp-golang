@@ -26,27 +26,29 @@ type handler struct {
 
 // ServeHTTP delegates to h.Handler
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	gls.Initialize()
-	defer func() {
-		gls.Clear()
-	}()
-	whiteUrl := openrasp.ExtractWhiteKey(req.URL)
-	whiteBitMask := openrasp.GetWhite().PrefixSearch(whiteUrl)
-	gls.Set("whiteMask", whiteBitMask)
+	if openrasp.IsComplete() {
+		gls.Initialize()
+		defer func() {
+			gls.Clear()
+		}()
+		whiteUrl := openrasp.ExtractWhiteKey(req.URL)
+		whiteBitMask := openrasp.GetWhite().PrefixSearch(whiteUrl)
+		gls.Set("whiteMask", whiteBitMask)
 
-	clientIpHeader := openrasp.GetGeneral().GetString("clientip.header")
-	bodyMaxByte := openrasp.GetGeneral().GetInt("body.maxbytes")
-	requestInfo := model.NewRequestInfo(req, clientIpHeader, bodyMaxByte)
-	gls.Set("requestInfo", requestInfo)
+		clientIpHeader := openrasp.GetGeneral().GetString("clientip.header")
+		bodyMaxByte := openrasp.GetGeneral().GetInt("body.maxbytes")
+		requestInfo := model.NewRequestInfo(req, clientIpHeader, bodyMaxByte)
+		gls.Set("requestInfo", requestInfo)
 
-	w, resp := WrapResponseWriter(w)
-	defer func() {
-		if v := recover(); v != nil {
-			if resp.StatusCode == 0 {
-				w.WriteHeader(http.StatusOK)
+		w, resp := WrapResponseWriter(w)
+		defer func() {
+			if v := recover(); v != nil {
+				if resp.StatusCode == 0 {
+					w.WriteHeader(http.StatusOK)
+				}
 			}
-		}
-	}()
+		}()
+	}
 	h.handler.ServeHTTP(w, req)
 }
 
