@@ -9,11 +9,7 @@ const (
 	AllType                = Sql | SqlException
 )
 
-var checkTypeName = map[CheckType]string{
-	Sql:          "sql",
-	SqlException: "sql_exception",
-	AllType:      "all",
-}
+var buildinCheckTypes = []CheckType{SqlException}
 
 func CheckTypeToString(ct CheckType) string {
 	switch ct {
@@ -37,4 +33,19 @@ func CheckStringToType(key string) CheckType {
 	default:
 		return InvalidType
 	}
+}
+
+func BuildinActionScript() string {
+	if len(buildinCheckTypes) > 0 {
+		var bcond string
+		for _, ct := range buildinCheckTypes {
+			bcond += (" && key === '" + CheckTypeToString(ct) + "'")
+		}
+		script := `JSON.stringify(Object.keys(RASP.algorithmConfig || {})
+		.filter(key => typeof key === 'string' && typeof RASP.algorithmConfig[key] === 'object' && typeof RASP.algorithmConfig[key].action === 'string'`
+		script += bcond
+		script += `).map(key => [key, RASP.algorithmConfig[key].action]))`
+		return script
+	}
+	return ""
 }

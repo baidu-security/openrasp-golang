@@ -6,64 +6,76 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	v8 "github.com/baidu-security/openrasp-v8/go"
 )
 
+type UpdateListener interface {
+	OnPluginUpdate()
+}
+
 type PluginManager struct {
-	dirPath string
-	plugins []string
+	dirPath   string
+	plugins   []v8.Plugin
+	listeners []UpdateListener
+	mu        sync.RWMutex
 }
 
 func NewPluginManager(dir string) *PluginManager {
 	pm := &PluginManager{
 		dirPath: dir,
-		plugins: []string{},
 	}
 	return pm
 }
 
+func (pm *PluginManager) AttachListener(listener UpdateListener) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.listeners = append(pm.listeners, listener)
+}
+
 func (pm *PluginManager) walkFunc(path string, info os.FileInfo, err error) error {
 	if !info.IsDir() && filepath.Ext(path) == ".js" {
-		pm.plugins = append(pm.plugins, path)
+		plugin, err := newPlugin(path)
+		if err == nil {
+			pm.plugins = append(pm.plugins, *plugin)
+		}
 	}
 	return nil
 }
 
-func (pm *PluginManager) clearPlugins() {
+func (pm *PluginManager) loadLocalPlugins() {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 	pm.plugins = nil
-}
-
-func (pm *PluginManager) searchPlugins() {
 	filepath.Walk(pm.dirPath, pm.walkFunc)
 }
 
-func (pm *PluginManager) LoadLocalPlugins() {
-	pm.clearPlugins()
-	pm.searchPlugins()
-	pm.buildSnapshot()
+func (pm *PluginManager) buildLocalSnapshot() {
+	pm.loadLocalPlugins()
+	pm.createSnapshot()
 }
 
-func (pm *PluginManager) buildSnapshot() {
-	var plugins []v8.Plugin
-	for _, pluginFile := range pm.plugins {
-		plugin, err := NewPlugin(pluginFile)
-		if err == nil {
-			plugins = append(plugins, *plugin)
+func (pm *PluginManager) createSnapshot() {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+	if len(pm.plugins) > 0 {
+		if v8.CreateSnapshot("", pm.plugins) {
+			for _, l := range pm.listeners {
+				l.OnPluginUpdate()
+			}
 		}
-	}
-	if len(plugins) > 0 {
-		v8.CreateSnapshot("", plugins)
 	}
 }
 
 func (pm *PluginManager) OnUpdate(absPath string) {
 	if filepath.Ext(absPath) == ".js" {
-		pm.LoadLocalPlugins()
+		pm.buildLocalSnapshot()
 	}
 }
 
-func NewPlugin(path string) (*v8.Plugin, error) {
+func newPlugin(path string) (*v8.Plugin, error) {
 	if filepath.Ext(path) == ".js" {
 		content, err := ioutil.ReadFile(path)
 		if err != nil {

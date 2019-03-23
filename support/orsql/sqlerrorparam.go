@@ -1,6 +1,7 @@
 package orsql
 
 import (
+	openrasp "github.com/baidu-security/openrasp-golang"
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
@@ -28,13 +29,16 @@ func (sep *SqlErrorParam) buildPluginMessage() string {
 }
 
 func (sep *SqlErrorParam) AttackCheck() []*model.AttackResult {
-	bitMaskValue := gls.Get("whiteMask")
-	bitMask, ok := bitMaskValue.(int)
 	var results []*model.AttackResult
-	if ok && (bitMask&int(common.SqlException) == 0) {
-		if sep.Server == "mysql" {
-			ar := model.NewAttackResult("block", sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
-			results = append(results, ar)
+	ic := openrasp.GetAction().Get(common.SqlException)
+	if ic != model.Ignore {
+		bitMaskValue := gls.Get("whiteMask")
+		bitMask, ok := bitMaskValue.(int)
+		if ok && (bitMask&int(common.SqlException) == 0) {
+			if sep.Server == "mysql" {
+				ar := model.NewAttackResult(model.InterceptCodeToString(ic), sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
+				results = append(results, ar)
+			}
 		}
 	}
 	return results

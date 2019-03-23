@@ -16,6 +16,7 @@ var general *config.GeneralConfig
 var logManager *LogManager
 var pluginManager *PluginManager
 var whiteList *WhiteList
+var buildinAction *BuildinAction
 var complete bool
 
 func init() {
@@ -64,6 +65,9 @@ func init() {
 	}
 	pluginManager = NewPluginManager(pluginDir)
 
+	buildinAction = NewBuildinAction()
+	pluginManager.AttachListener(buildinAction)
+
 	complete = true
 
 	yamlPath := filepath.Join(confDir, "openrasp.yml")
@@ -108,4 +112,8 @@ func GetLog() *LogManager {
 
 func GetWhite() *WhiteList {
 	return whiteList
+}
+
+func GetAction() *BuildinAction {
+	return buildinAction
 }
