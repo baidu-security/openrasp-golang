@@ -67,7 +67,7 @@ func sqlConnectionPolicyCheck(d *wrapDriver, name string) (model.InterceptCode, 
 }
 
 func Open(driverName, dataSourceName string) (*sql.DB, error) {
-	if openrasp.IsComplete() {
+	if openrasp.IsComplete() && gls.Activated() {
 		d, ok := drivers[driverName]
 		var interceptCode model.InterceptCode = model.Ignore
 		var policyLogString string
