@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/stacktrace"
+	"github.com/baidu-security/openrasp-golang/support/orhttp"
 	"github.com/baidu-security/openrasp-golang/utils"
 )
 
@@ -76,7 +78,10 @@ func Open(driverName, dataSourceName string) (*sql.DB, error) {
 				if len(policyLogString) > 0 {
 					openrasp.GetLog().PolicyInfo(policyLogString)
 				}
-				panic(openrasp.ErrBlock)
+				blocker, ok := gls.Get("responseWriter").(orhttp.OpenRASPBlocker)
+				if ok {
+					blocker.BlockByOpenRASP()
+				}
 			}
 		}
 		db, err := sql.Open(wrapDriverName(driverName), dataSourceName)
@@ -186,7 +191,12 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 			}
 		}
 		if shouldBlock {
-			panic(openrasp.ErrBlock)
+			blocker, ok := gls.Get("responseWriter").(orhttp.OpenRASPBlocker)
+			fmt.Printf("111\n")
+			if ok {
+				fmt.Printf("222\n")
+				blocker.BlockByOpenRASP()
+			}
 		}
 	}
 }

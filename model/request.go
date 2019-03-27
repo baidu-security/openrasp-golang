@@ -111,6 +111,10 @@ func (ri *RequestInfo) SetRequestBody(rb *RequestBody) {
 	ri.RequestBody = rb
 }
 
+func (ri *RequestInfo) GetRequestId() string {
+	return ri.RequestId
+}
+
 func NewRequestBody(req *http.Request, size int) *RequestBody {
 	out := &RequestBody{}
 

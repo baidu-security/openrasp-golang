@@ -10,6 +10,7 @@ import (
 	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/stacktrace"
+	"github.com/baidu-security/openrasp-golang/support/orhttp"
 	"github.com/baidu-security/openrasp-golang/utils"
 )
 
@@ -88,7 +89,10 @@ func (c *conn) queryAttackCheck(query string) {
 		}
 	}
 	if shouldBlock {
-		panic(openrasp.ErrBlock)
+		blocker, ok := gls.Get("responseWriter").(orhttp.OpenRASPBlocker)
+		if ok {
+			blocker.BlockByOpenRASP()
+		}
 	}
 }
 
