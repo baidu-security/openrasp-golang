@@ -58,8 +58,8 @@ func (c *conn) interceptError(param string, resultError *error) {
 func (c *conn) queryAttackCheck(query string) {
 	sqlParam := NewSqlParam(c.driver.driverName, query)
 	shouldBlock := false
-	if openrasp.RequestInfoAvailable() {
-		requestInfo, _ := gls.Get("requestInfo").(*model.RequestInfo)
+	requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
+	if ok {
 		attackResults := sqlParam.AttackCheck()
 		for _, attackResult := range attackResults {
 			if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {

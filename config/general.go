@@ -47,6 +47,7 @@ func NewGeneralConfig() *GeneralConfig {
 	generalViper.SetDefault("lru.max_size", 1024)
 	generalViper.SetDefault("hook.white", map[string]interface{}{})
 	generalViper.SetDefault("decompile.enable", false)
+	generalViper.SetDefault("debug.level", 0)
 	return &GeneralConfig{
 		general: generalViper,
 	}

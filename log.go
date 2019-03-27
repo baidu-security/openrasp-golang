@@ -12,6 +12,14 @@ import (
 )
 
 type LogCode int
+type Level uint32
+
+const (
+	ErrorLevel Level = iota
+	WarnLevel
+	InfoLevel
+	DebugLevel
+)
 
 const (
 	refillDuration = 60 * 1000 * 1000
@@ -28,6 +36,17 @@ type WrapLogger struct {
 	logger   *logrus.Logger
 	filename string
 	dirCode  common.WorkDirCode
+}
+
+func levelTransform(l Level) logrus.Level {
+	switch l {
+	case DebugLevel:
+		return logrus.DebugLevel
+	case InfoLevel:
+		return logrus.InfoLevel
+	default:
+		return logrus.WarnLevel
+	}
 }
 
 func NewWrapLogger(dirCode common.WorkDirCode, f *orlog.OpenRASPFormatter) (*WrapLogger, error) {
@@ -54,6 +73,10 @@ func (wl *WrapLogger) Info(message string) {
 
 func (wl *WrapLogger) SetOutput(output io.Writer) {
 	wl.logger.SetOutput(output)
+}
+
+func (wl *WrapLogger) SetLevel(l Level) {
+	wl.logger.SetLevel(levelTransform(l))
 }
 
 func dirCodeToName(dirCode common.WorkDirCode) string {
@@ -116,10 +139,14 @@ func (lm *LogManager) GetAlarm() *WrapLogger {
 func (lm *LogManager) UpdateFileWriter() {
 	maxBackup := GetGeneral().GetInt("log.maxbackup")
 	capacity := GetGeneral().GetInt64("log.maxburst")
-	lm.alarm.SetOutput(orlog.NewLogger(lm.alarm.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.policy.SetOutput(orlog.NewLogger(lm.policy.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.plugin.SetOutput(orlog.NewLogger(lm.plugin.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.rasp.SetOutput(orlog.NewLogger(lm.rasp.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	lm.alarm.SetOutput(orlog.NewFileWriter(lm.alarm.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	lm.policy.SetOutput(orlog.NewFileWriter(lm.policy.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	lm.plugin.SetOutput(orlog.NewFileWriter(lm.plugin.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	lm.rasp.SetOutput(orlog.NewFileWriter(lm.rasp.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	debugLevel := GetGeneral().GetInt("debug.level")
+	if debugLevel > 0 {
+		lm.rasp.SetLevel(DebugLevel)
+	}
 }
 
 func (lm *LogManager) OnConfigUpdate() {

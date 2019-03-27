@@ -17,9 +17,9 @@ const (
 	backupFormatRegex = "\\d{4}-\\d{2}-\\d{2}"
 )
 
-var _ io.WriteCloser = (*Logger)(nil)
+var _ io.WriteCloser = (*FileWriter)(nil)
 
-type Logger struct {
+type FileWriter struct {
 	filename     string
 	maxBackups   int
 	lastedSuffix string
@@ -30,8 +30,8 @@ type Logger struct {
 	startMill    sync.Once
 }
 
-func NewLogger(filename string, maxBackups int, tokenBucket *TokenBucket) *Logger {
-	logger := &Logger{
+func NewFileWriter(filename string, maxBackups int, tokenBucket *TokenBucket) *FileWriter {
+	logger := &FileWriter{
 		filename:    filename,
 		maxBackups:  maxBackups,
 		tokenBucket: tokenBucket,
@@ -45,7 +45,7 @@ var (
 	megabyte    = 1024 * 1024
 )
 
-func (l *Logger) Write(p []byte) (n int, err error) {
+func (l *FileWriter) Write(p []byte) (n int, err error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -65,13 +65,13 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 	return n, err
 }
 
-func (l *Logger) Close() error {
+func (l *FileWriter) Close() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.close()
 }
 
-func (l *Logger) close() error {
+func (l *FileWriter) close() error {
 	if l.file == nil {
 		return nil
 	}
@@ -80,7 +80,7 @@ func (l *Logger) close() error {
 	return err
 }
 
-func (l *Logger) rollover() error {
+func (l *FileWriter) rollover() error {
 	cur := currentTime()
 	curSuffix := cur.Format(backupFormat)
 	if curSuffix == l.lastedSuffix {
@@ -94,13 +94,13 @@ func (l *Logger) rollover() error {
 	}
 }
 
-func (l *Logger) Rotate() error {
+func (l *FileWriter) Rotate() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.rotate()
 }
 
-func (l *Logger) rotate() error {
+func (l *FileWriter) rotate() error {
 	if err := l.close(); err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (l *Logger) rotate() error {
 	return nil
 }
 
-func (l *Logger) openNew() error {
+func (l *FileWriter) openNew() error {
 	err := os.MkdirAll(l.dir(), 0744)
 	if err != nil {
 		return fmt.Errorf("can't make directories for new logfile: %s", err)
@@ -146,7 +146,7 @@ func backupName(name, timeSuffix string) string {
 	return filepath.Join(dir, fmt.Sprintf("%s.%s", filename, timeSuffix))
 }
 
-func (l *Logger) openExistingOrNew() error {
+func (l *FileWriter) openExistingOrNew() error {
 	l.mill()
 	filename := l.filename
 	_, err := os_Stat(filename)
@@ -164,11 +164,11 @@ func (l *Logger) openExistingOrNew() error {
 	return nil
 }
 
-func (l *Logger) regexPattern() string {
+func (l *FileWriter) regexPattern() string {
 	return l.filename + "(?P<Date>" + backupFormatRegex + ")"
 }
 
-func (l *Logger) millRunOnce() error {
+func (l *FileWriter) millRunOnce() error {
 	files, err := l.oldLogFiles()
 	if err != nil {
 		return err
@@ -193,13 +193,13 @@ func (l *Logger) millRunOnce() error {
 	return err
 }
 
-func (l *Logger) millRun() {
+func (l *FileWriter) millRun() {
 	for _ = range l.millCh {
 		_ = l.millRunOnce()
 	}
 }
 
-func (l *Logger) mill() {
+func (l *FileWriter) mill() {
 	l.startMill.Do(func() {
 		l.millCh = make(chan bool, 1)
 		go l.millRun()
@@ -210,7 +210,7 @@ func (l *Logger) mill() {
 	}
 }
 
-func (l *Logger) oldLogFiles() ([]logInfo, error) {
+func (l *FileWriter) oldLogFiles() ([]logInfo, error) {
 	files, err := ioutil.ReadDir(l.dir())
 	if err != nil {
 		return nil, fmt.Errorf("can't read log file directory: %s", err)
@@ -235,7 +235,7 @@ func (l *Logger) oldLogFiles() ([]logInfo, error) {
 	return logFiles, nil
 }
 
-func (l *Logger) dir() string {
+func (l *FileWriter) dir() string {
 	return filepath.Dir(l.filename)
 }
 

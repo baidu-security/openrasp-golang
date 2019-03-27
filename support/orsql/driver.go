@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -160,8 +159,8 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 	if hit {
 		sqlErrorParam := NewSqlErrorParam(d.driverName, param, errCode, errMsg)
 		shouldBlock := false
-		if openrasp.RequestInfoAvailable() {
-			requestInfo, _ := gls.Get("requestInfo").(*model.RequestInfo)
+		requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
+		if ok {
 			attackResults := sqlErrorParam.AttackCheck()
 			for _, attackResult := range attackResults {
 				if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {
@@ -192,9 +191,7 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 		}
 		if shouldBlock {
 			blocker, ok := gls.Get("responseWriter").(orhttp.OpenRASPBlocker)
-			fmt.Printf("111\n")
 			if ok {
-				fmt.Printf("222\n")
 				blocker.BlockByOpenRASP()
 			}
 		}
