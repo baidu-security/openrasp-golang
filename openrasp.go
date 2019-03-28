@@ -78,6 +78,7 @@ func init() {
 
 	if !basic.GetBool("cloud.enable") {
 		general.LoadYaml(yamlPath)
+		pluginManager.buildLocalSnapshot()
 		workSpace.StartWatch(common.Conf)
 		workSpace.RegisterListener(common.Conf, general)
 		workSpace.StartWatch(common.Plugins)

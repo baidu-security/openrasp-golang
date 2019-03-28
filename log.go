@@ -12,17 +12,10 @@ import (
 )
 
 type LogCode int
-type Level uint32
-
-const (
-	ErrorLevel Level = iota
-	WarnLevel
-	InfoLevel
-	DebugLevel
-)
 
 const (
 	refillDuration = 60 * 1000 * 1000
+	duration       = time.Duration(refillDuration)
 )
 
 type LogManager struct {
@@ -36,17 +29,6 @@ type WrapLogger struct {
 	logger   *logrus.Logger
 	filename string
 	dirCode  common.WorkDirCode
-}
-
-func levelTransform(l Level) logrus.Level {
-	switch l {
-	case DebugLevel:
-		return logrus.DebugLevel
-	case InfoLevel:
-		return logrus.InfoLevel
-	default:
-		return logrus.WarnLevel
-	}
 }
 
 func NewWrapLogger(dirCode common.WorkDirCode, f *orlog.OpenRASPFormatter) (*WrapLogger, error) {
@@ -75,8 +57,16 @@ func (wl *WrapLogger) SetOutput(output io.Writer) {
 	wl.logger.SetOutput(output)
 }
 
-func (wl *WrapLogger) SetLevel(l Level) {
-	wl.logger.SetLevel(levelTransform(l))
+func (wl *WrapLogger) SetLevel(l orlog.Level) {
+	wl.logger.SetLevel(orlog.LevelTransform(l))
+}
+
+func (wl *WrapLogger) ClearHooks() {
+	wl.logger.ReplaceHooks(make(logrus.LevelHooks))
+}
+
+func (wl *WrapLogger) AddHook(hook orlog.Hook) {
+	wl.logger.AddHook(hook)
 }
 
 func dirCodeToName(dirCode common.WorkDirCode) string {
@@ -139,18 +129,35 @@ func (lm *LogManager) GetAlarm() *WrapLogger {
 func (lm *LogManager) UpdateFileWriter() {
 	maxBackup := GetGeneral().GetInt("log.maxbackup")
 	capacity := GetGeneral().GetInt64("log.maxburst")
-	lm.alarm.SetOutput(orlog.NewFileWriter(lm.alarm.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.policy.SetOutput(orlog.NewFileWriter(lm.policy.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.plugin.SetOutput(orlog.NewFileWriter(lm.plugin.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
-	lm.rasp.SetOutput(orlog.NewFileWriter(lm.rasp.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), time.Duration(refillDuration))))
+	lm.alarm.SetOutput(orlog.NewFileWriter(lm.alarm.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.policy.SetOutput(orlog.NewFileWriter(lm.policy.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.plugin.SetOutput(orlog.NewFileWriter(lm.plugin.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.rasp.SetOutput(orlog.NewFileWriter(lm.rasp.filename, maxBackup, orlog.NewTokenBucket(uint64(capacity), duration)))
 	debugLevel := GetGeneral().GetInt("debug.level")
 	if debugLevel > 0 {
-		lm.rasp.SetLevel(DebugLevel)
+		lm.rasp.SetLevel(orlog.DebugLevel)
 	}
+}
+
+func (lm *LogManager) UpdateHttpHook() {
+	backendUrl := GetBasic().GetString("cloud.backend_url")
+	appId := GetBasic().GetString("cloud.app_id")
+	appSecret := GetBasic().GetString("cloud.app_secret")
+	capacity := GetGeneral().GetInt64("log.maxburst")
+	lm.alarm.ClearHooks()
+	lm.alarm.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.policy.ClearHooks()
+	lm.policy.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.rasp.ClearHooks()
+	lm.rasp.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.WarnLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
 }
 
 func (lm *LogManager) OnConfigUpdate() {
 	lm.UpdateFileWriter()
+	clouldEnable := GetBasic().GetBool("cloud.enable")
+	if clouldEnable {
+		lm.UpdateHttpHook()
+	}
 }
 
 func (lm *LogManager) PolicyInfo(message string) {

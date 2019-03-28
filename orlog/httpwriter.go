@@ -2,8 +2,6 @@ package orlog
 
 import (
 	"bytes"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
@@ -43,8 +41,11 @@ func (hw *HttpWriter) Write(p []byte) (n int, err error) {
 	req, err := http.NewRequest("POST", hw.url, bytes.NewReader(p))
 	req.Header.Add("X-OpenRASP-AppID", hw.appId)
 	req.Header.Add("X-OpenRASP-AppSecret", hw.appSecret)
-	resp, err := hw.client.Do(req)
-	io.Copy(ioutil.Discard, resp.Body)
-	defer resp.Body.Close()
-	return len(p), err
+	go func() {
+		resp, err := hw.client.Do(req)
+		if err == nil {
+			defer resp.Body.Close()
+		}
+	}()
+	return len(p), nil
 }
