@@ -1,6 +1,8 @@
 package openrasp
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrBlock = errors.New("Blocked by OpenRASP")

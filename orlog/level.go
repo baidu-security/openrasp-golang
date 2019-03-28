@@ -21,3 +21,18 @@ func LevelTransform(l Level) logrus.Level {
 		return logrus.WarnLevel
 	}
 }
+
+func LevelName(level Level) string {
+	switch level {
+	case ErrorLevel:
+		return "ERROR"
+	case WarnLevel:
+		return "WARN"
+	case InfoLevel:
+		return "INFO"
+	case DebugLevel:
+		return "DEBUG"
+	default:
+		return "UNKNOWN"
+	}
+}

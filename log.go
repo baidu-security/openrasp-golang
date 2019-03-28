@@ -2,11 +2,15 @@ package openrasp
 
 import (
 	"io"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/baidu-security/openrasp-golang/common"
+	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/orlog"
+	"github.com/baidu-security/openrasp-golang/stacktrace"
 	"github.com/baidu-security/openrasp-golang/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -51,6 +55,14 @@ func NewWrapLogger(dirCode common.WorkDirCode, f *orlog.OpenRASPFormatter) (*Wra
 
 func (wl *WrapLogger) Info(message string) {
 	wl.logger.Info(message)
+}
+
+func (wl *WrapLogger) Warn(message string) {
+	wl.logger.Warn(message)
+}
+
+func (wl *WrapLogger) Debug(message string) {
+	wl.logger.Debug(message)
 }
 
 func (wl *WrapLogger) SetOutput(output io.Writer) {
@@ -126,6 +138,10 @@ func (lm *LogManager) GetAlarm() *WrapLogger {
 	return lm.alarm
 }
 
+func (lm *LogManager) GetRasp() *WrapLogger {
+	return lm.rasp
+}
+
 func (lm *LogManager) UpdateFileWriter() {
 	maxBackup := GetGeneral().GetInt("log.maxbackup")
 	capacity := GetGeneral().GetInt64("log.maxburst")
@@ -170,4 +186,31 @@ func (lm *LogManager) PluginInfo(message string) {
 
 func (lm *LogManager) AlarmInfo(message string) {
 	lm.GetAlarm().Info(message)
+}
+
+func (lm *LogManager) RaspInfo(message string, moduleCode orlog.ModuleCode) {
+	lm.GetRasp().Info(buildRaspLog(message, orlog.LevelName(orlog.InfoLevel), moduleCode))
+}
+
+func (lm *LogManager) RaspWarn(message string, moduleCode orlog.ModuleCode) {
+	lm.GetRasp().Warn(buildRaspLog(message, orlog.LevelName(orlog.WarnLevel), moduleCode))
+}
+
+func (lm *LogManager) RaspDebug(message string, moduleCode orlog.ModuleCode) {
+	lm.GetRasp().Debug(buildRaspLog(message, orlog.LevelName(orlog.DebugLevel), moduleCode))
+}
+
+func buildRaspLog(message, level string, moduleCode orlog.ModuleCode) string {
+	rl := &model.RaspLog{
+		System:     GetGlobals().System,
+		StackTrace: strings.Join(stacktrace.LogFormat(stacktrace.AppendStacktrace(nil, 1, GetGeneral().GetInt("log.maxstack"))), "\n"),
+		RaspId:     GetGlobals().RaspId,
+		AppId:      GetBasic().GetString("cloud.app_id"),
+		EventTime:  utils.CurrentISO8601Time(),
+		Message:    message,
+		Pid:        os.Getpid(),
+		Level:      level,
+		ErrorCode:  int(moduleCode),
+	}
+	return rl.String()
 }

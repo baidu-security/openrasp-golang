@@ -32,9 +32,10 @@ type FileWriter struct {
 
 func NewFileWriter(filename string, maxBackups int, tokenBucket *TokenBucket) *FileWriter {
 	logger := &FileWriter{
-		filename:    filename,
-		maxBackups:  maxBackups,
-		tokenBucket: tokenBucket,
+		filename:     filename,
+		maxBackups:   maxBackups,
+		tokenBucket:  tokenBucket,
+		lastedSuffix: currentTime().Format(backupFormat),
 	}
 	return logger
 }
