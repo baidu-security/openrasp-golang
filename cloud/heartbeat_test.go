@@ -21,6 +21,8 @@ func TestHeartBeat(t *testing.T) {
 		t.Fatal()
 	}, func(config *map[string]interface{}) {
 		t.Fatal()
+	}, func(err error) {
+		t.Fatal()
 	})
 	time.Sleep(5 * time.Second)
 	assert.True(t, c.isHeartBeat)

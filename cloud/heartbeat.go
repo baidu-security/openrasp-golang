@@ -1,7 +1,6 @@
 package cloud
 
 import (
-	"log"
 	"time"
 )
 
@@ -45,15 +44,16 @@ func (c *Client) HeartBeat(updatePlugin func(string, string), updateConfig func(
 }
 
 // StartHeartBeat emmm
-func (c *Client) StartHeartBeat(interval time.Duration, updatePlugin func(string, string), updateConfig func(*map[string]interface{})) {
+func (c *Client) StartHeartBeat(interval time.Duration, updatePlugin func(string, string), updateConfig func(*map[string]interface{}), onError func(error)) {
+	c.wg.Add(1)
+	c.isHeartBeat = true
 ABORT:
 	for {
-		c.isHeartBeat = true
 		select {
 		case <-time.After(interval):
 			err := c.HeartBeat(updatePlugin, updateConfig)
 			if err != nil {
-				log.Printf("%+v\n", err)
+				onError(err)
 				time.Sleep(1 * time.Second)
 				c.HeartBeat(updatePlugin, updateConfig)
 			}
@@ -61,12 +61,14 @@ ABORT:
 			break ABORT
 		}
 	}
+	c.wg.Done()
 	c.isHeartBeat = false
-	c.abort <- struct{}{}
 }
 
 // StopHeartBeat emmm
 func (c *Client) StopHeartBeat() {
-	c.abort <- struct{}{}
-	<-c.abort
+	if c.isHeartBeat {
+		c.abort <- struct{}{}
+		c.wg.Wait()
+	}
 }

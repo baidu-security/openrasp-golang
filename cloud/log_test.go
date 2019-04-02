@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ func TestLog(t *testing.T) {
 		"attack_type": "directory",
 	}
 	logs := []map[string]interface{}{log}
-	count, err := c.Log("attack", logs)
+	data, _ := json.Marshal(logs)
+	err := c.Log("attack", data)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), count)
 }
