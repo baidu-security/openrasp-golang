@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/baidu-security/openrasp-golang/cloud"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,8 +19,8 @@ type HttpHook struct {
 	Writer    *HttpWriter
 }
 
-func NewHttpHook(url, appId, appSecret string, level Level, tokenBucket *TokenBucket) *HttpHook {
-	hw := NewHttpWriter(url, appId, appSecret, tokenBucket)
+func NewHttpHook(t string, cm *cloud.Client, level Level, tokenBucket *TokenBucket) *HttpHook {
+	hw := NewHttpWriter(t, cm, tokenBucket)
 	hh := &HttpHook{
 		hookLevel: level,
 		Writer:    hw,

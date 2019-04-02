@@ -29,6 +29,10 @@ func (bc *BasicConfig) GetString(key string) string {
 	return bc.basic.GetString(key)
 }
 
+func (bc *BasicConfig) GetInt64(key string) int64 {
+	return bc.basic.GetInt64(key)
+}
+
 func (bc *BasicConfig) LoadYaml(path string) error {
 	bc.basic.SetConfigType("yaml")
 	bc.basic.SetConfigFile(path)

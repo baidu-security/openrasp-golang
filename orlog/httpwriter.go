@@ -1,32 +1,22 @@
 package orlog
 
 import (
-	"bytes"
-	"net/http"
 	"sync"
-	"time"
+
+	"github.com/baidu-security/openrasp-golang/cloud"
 )
 
 type HttpWriter struct {
-	url         string
-	appId       string
-	appSecret   string
-	client      *http.Client
+	t           string
+	cm          *cloud.Client
 	tokenBucket *TokenBucket
 	mu          sync.Mutex
 }
 
-func NewHttpWriter(url, appId, appSecret string, tokenBucket *TokenBucket) *HttpWriter {
-	tr := &http.Transport{
-		IdleConnTimeout:    20 * time.Second,
-		DisableCompression: true,
-	}
-	client := &http.Client{Transport: tr}
+func NewHttpWriter(t string, cm *cloud.Client, tokenBucket *TokenBucket) *HttpWriter {
 	hw := &HttpWriter{
-		url:         url,
-		appId:       appId,
-		appSecret:   appSecret,
-		client:      client,
+		t:           t,
+		cm:          cm,
 		tokenBucket: tokenBucket,
 	}
 	return hw
@@ -38,14 +28,6 @@ func (hw *HttpWriter) Write(p []byte) (n int, err error) {
 	if hw.tokenBucket != nil && hw.tokenBucket.Consume() {
 		return 0, nil
 	}
-	req, err := http.NewRequest("POST", hw.url, bytes.NewReader(p))
-	req.Header.Add("X-OpenRASP-AppID", hw.appId)
-	req.Header.Add("X-OpenRASP-AppSecret", hw.appSecret)
-	go func() {
-		resp, err := hw.client.Do(req)
-		if err == nil {
-			defer resp.Body.Close()
-		}
-	}()
+	go hw.cm.Log(hw.t, p)
 	return len(p), nil
 }

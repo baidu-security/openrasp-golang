@@ -75,6 +75,14 @@ func (pm *PluginManager) OnUpdate(absPath string) {
 	}
 }
 
+func (pm *PluginManager) OnUpdateCloud(source string, filename string) {
+	pm.plugins = []v8.Plugin{v8.Plugin{
+		Source:   source,
+		Filename: filename,
+	}}
+	pm.createSnapshot()
+}
+
 func newPlugin(path string) (*v8.Plugin, error) {
 	if filepath.Ext(path) == ".js" {
 		content, err := ioutil.ReadFile(path)

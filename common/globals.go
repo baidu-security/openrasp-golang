@@ -11,6 +11,7 @@ type Globals struct {
 	Hostname string
 	RaspId   string
 	HttpAddr string
+	RootDir  string
 
 	Language      *model.Language
 	System        *model.System
@@ -18,13 +19,14 @@ type Globals struct {
 	ContextServer *model.ContextServer
 }
 
-func NewGlobals(rootPath string) *Globals {
+func NewGlobals(rootDir string) *Globals {
 	hostname := utils.GetHostname()
 	nic, _ := getServerNic()
-	raspId := calculateRaspId(hostname, rootPath)
+	raspId := calculateRaspId(hostname, rootDir)
 	g := Globals{
 		Hostname:      hostname,
 		RaspId:        raspId,
+		RootDir:       rootDir,
 		Language:      model.NewLanguage(),
 		System:        model.NewSystem(nic, hostname),
 		ContextServer: model.NewContextServer(),

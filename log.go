@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baidu-security/openrasp-golang"
+
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/orlog"
@@ -156,16 +158,14 @@ func (lm *LogManager) UpdateFileWriter() {
 }
 
 func (lm *LogManager) UpdateHttpHook() {
-	backendUrl := GetBasic().GetString("cloud.backend_url")
-	appId := GetBasic().GetString("cloud.app_id")
-	appSecret := GetBasic().GetString("cloud.app_secret")
+	cm := openrasp.GetCloudManager()
 	capacity := GetGeneral().GetInt64("log.maxburst")
 	lm.alarm.ClearHooks()
-	lm.alarm.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.alarm.AddHook(orlog.NewHttpHook("attack", cm, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
 	lm.policy.ClearHooks()
-	lm.policy.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.policy.AddHook(orlog.NewHttpHook("policy", cm, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
 	lm.rasp.ClearHooks()
-	lm.rasp.AddHook(orlog.NewHttpHook(backendUrl, appId, appSecret, orlog.WarnLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
+	lm.rasp.AddHook(orlog.NewHttpHook("error", cm, orlog.WarnLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
 }
 
 func (lm *LogManager) OnConfigUpdate() {

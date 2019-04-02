@@ -3,7 +3,9 @@ package openrasp
 import (
 	"log"
 	"path/filepath"
+	"time"
 
+	"github.com/baidu-security/openrasp-golang/cloud"
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/config"
 	"github.com/baidu-security/openrasp-golang/orlog"
@@ -18,6 +20,7 @@ var logManager *LogManager
 var pluginManager *PluginManager
 var whiteList *WhiteList
 var buildinAction *BuildinAction
+var cloudManager *cloud.Client
 var complete bool
 
 func init() {
@@ -85,6 +88,33 @@ func init() {
 		workSpace.RegisterListener(common.Conf, general)
 		workSpace.StartWatch(common.Plugins)
 		workSpace.RegisterListener(common.Plugins, pluginManager)
+	} else {
+		cloudManager = cloud.NewClient(
+			basic.GetString("cloud.backend_url"),
+			basic.GetString("cloud.app_id"),
+			basic.GetString("cloud.app_secret"),
+			time.Duration(10)*time.Second,
+		)
+		err = cloudManager.Register(
+			commonGlobals.RaspId,
+			commonGlobals.RootDir,
+			commonGlobals.Hostname,
+			commonGlobals.Language.Language, 
+			commonGlobals.Language.LanguageVersion, 
+			basic.GetInt64("cloud.heartbeat_interval")
+		)
+		if err != nil {
+			logManager.RaspWarn("Unable to register client.", orlog.Register)
+			return
+		}
+		cloudManager.StartHeartBeat(
+			time.Duration(basic.GetInt64("cloud.heartbeat_interval"))*time.Second,
+			pluginManager.OnUpdateCloud,
+			general.OnUpdateCloud,
+			func(err error) {
+				logManager.RaspWarn(err.Error(), orlog.Heartbeat)
+			},
+		)
 	}
 	InitContextGetters()
 
@@ -122,4 +152,12 @@ func GetWhite() *WhiteList {
 
 func GetAction() *BuildinAction {
 	return buildinAction
+}
+
+func GetPluginManager() *PluginManager {
+	return pluginManager
+}
+
+func GetCloudManager() *cloud.Client {
+	return cloudManager
 }

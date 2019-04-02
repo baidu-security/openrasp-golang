@@ -114,6 +114,19 @@ func (gc *GeneralConfig) OnUpdate(absPath string) {
 	}
 }
 
+func (gc *GeneralConfig) OnUpdateCloud(config *map[string]interface{}) {
+	gc.mu.Lock()
+	defer func() {
+		gc.mu.Unlock()
+		for _, l := range gc.listeners {
+			l.OnConfigUpdate()
+		}
+	}()
+	for k, v := range *config {
+		gc.general.Set(k, v)
+	}
+}
+
 func (gc *GeneralConfig) LoadYaml(path string) {
 	gc.OnUpdate(path)
 }
