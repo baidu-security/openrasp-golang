@@ -30,9 +30,11 @@ func init() {
 // Middleware returns a beego.
 func Middleware() func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
-		return orhttp.Wrap(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			h.ServeHTTP(w, req)
-		}))
+		return orhttp.Wrap(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, req *http.Request) {
+					h.ServeHTTP(w, req)
+				}))
 	}
 }
 
