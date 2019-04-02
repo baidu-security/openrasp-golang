@@ -99,9 +99,9 @@ func init() {
 			commonGlobals.RaspId,
 			commonGlobals.RootDir,
 			commonGlobals.Hostname,
-			commonGlobals.Language.Language, 
-			commonGlobals.Language.LanguageVersion, 
-			basic.GetInt64("cloud.heartbeat_interval")
+			commonGlobals.Language.Language,
+			commonGlobals.Language.LanguageVersion,
+			basic.GetInt64("cloud.heartbeat_interval"),
 		)
 		if err != nil {
 			logManager.RaspWarn("Unable to register client.", orlog.Register)

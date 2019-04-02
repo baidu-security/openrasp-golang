@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baidu-security/openrasp-golang"
-
 	"github.com/baidu-security/openrasp-golang/common"
 	"github.com/baidu-security/openrasp-golang/model"
 	"github.com/baidu-security/openrasp-golang/orlog"
@@ -158,7 +156,7 @@ func (lm *LogManager) UpdateFileWriter() {
 }
 
 func (lm *LogManager) UpdateHttpHook() {
-	cm := openrasp.GetCloudManager()
+	cm := GetCloudManager()
 	capacity := GetGeneral().GetInt64("log.maxburst")
 	lm.alarm.ClearHooks()
 	lm.alarm.AddHook(orlog.NewHttpHook("attack", cm, orlog.InfoLevel, orlog.NewTokenBucket(uint64(capacity), duration)))
