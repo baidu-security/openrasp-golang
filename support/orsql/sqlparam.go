@@ -5,7 +5,6 @@ import (
 
 	openrasp "github.com/baidu-security/openrasp-golang"
 	"github.com/baidu-security/openrasp-golang/common"
-	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
 	v8 "github.com/baidu-security/openrasp-v8/go"
 )
@@ -28,12 +27,23 @@ func (sp *SqlParam) Bytes() []byte {
 	return b
 }
 
-func (sp *SqlParam) AttackCheck() []*model.AttackResult {
-	bitMaskValue := gls.Get("whiteMask")
-	bitMask, ok := bitMaskValue.(int)
+func (sp *SqlParam) GetType() common.CheckType {
+	return common.Sql
+}
+
+func (sp *SqlParam) GetTypeString() string {
+	return common.CheckTypeToString(sp.GetType())
+}
+
+func (sp *SqlParam) AttackCheck(opts ...common.AttackOption) []*model.AttackResult {
 	var ars []*model.AttackResult
-	if ok && (bitMask&int(common.Sql) == 0) && openrasp.RequestInfoAvailable() {
-		resultBytes := v8.Check("sql", sp.Bytes(), openrasp.DefaultContextGetters(), openrasp.GetGeneral().GetInt("plugin.timeout.millis"))
+	for _, opt := range opts {
+		if opt(sp) {
+			return ars
+		}
+	}
+	if openrasp.RequestInfoAvailable() {
+		resultBytes := v8.Check(sp.GetTypeString(), sp.Bytes(), openrasp.DefaultContextGetters(), openrasp.GetGeneral().GetInt("plugin.timeout.millis"))
 		var ms []map[string]interface{}
 		err := json.Unmarshal(resultBytes, &ms)
 		if err == nil {

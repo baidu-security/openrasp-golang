@@ -62,3 +62,8 @@ func (ba *BuildinAction) OnPluginUpdate() {
 		}
 	}
 }
+
+func IgnoreActionOption(ac common.AttackChecker) bool {
+	ic := GetAction().Get(ac.GetType())
+	return ic == model.Ignore
+}

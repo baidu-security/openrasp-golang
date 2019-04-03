@@ -60,7 +60,7 @@ func (c *conn) queryAttackCheck(query string) {
 	shouldBlock := false
 	requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
 	if ok {
-		attackResults := sqlParam.AttackCheck()
+		attackResults := sqlParam.AttackCheck(openrasp.WhitelistOption)
 		for _, attackResult := range attackResults {
 			if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {
 				attackLog := model.AttackLog{
@@ -76,7 +76,7 @@ func (c *conn) queryAttackCheck(query string) {
 					ServerIp:     openrasp.GetGlobals().HttpAddr,
 					EventTime:    utils.CurrentISO8601Time(),
 					EventType:    "attack",
-					AttackType:   "sql",
+					AttackType:   sqlParam.GetTypeString(),
 				}
 				attackLogString := attackLog.String()
 				if len(attackLogString) > 0 {

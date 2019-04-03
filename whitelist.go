@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/baidu-security/openrasp-golang/common"
+	"github.com/baidu-security/openrasp-golang/gls"
 )
 
 type WhiteList struct {
@@ -103,4 +104,13 @@ func ExtractWhiteKey(u *url.URL) string {
 		}
 		return fullUrl
 	}
+}
+
+func WhitelistOption(ac common.AttackChecker) bool {
+	bitMaskValue := gls.Get("whiteMask")
+	bitMask, ok := bitMaskValue.(int)
+	if ok && (bitMask&int(ac.GetType()) != 0) {
+		return true
+	}
+	return false
 }

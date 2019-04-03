@@ -3,7 +3,6 @@ package orsql
 import (
 	openrasp "github.com/baidu-security/openrasp-golang"
 	"github.com/baidu-security/openrasp-golang/common"
-	"github.com/baidu-security/openrasp-golang/gls"
 	"github.com/baidu-security/openrasp-golang/model"
 )
 
@@ -28,18 +27,25 @@ func (sep *SqlErrorParam) buildPluginMessage() string {
 	return sep.Server + " error " + sep.ErrCode + " detected: " + sep.ErrMsg
 }
 
-func (sep *SqlErrorParam) AttackCheck() []*model.AttackResult {
+func (sep *SqlErrorParam) GetType() common.CheckType {
+	return common.SqlException
+}
+
+func (sep *SqlErrorParam) GetTypeString() string {
+	return common.CheckTypeToString(sep.GetType())
+}
+
+func (sep *SqlErrorParam) AttackCheck(opts ...common.AttackOption) []*model.AttackResult {
 	var results []*model.AttackResult
-	ic := openrasp.GetAction().Get(common.SqlException)
-	if ic != model.Ignore {
-		bitMaskValue := gls.Get("whiteMask")
-		bitMask, ok := bitMaskValue.(int)
-		if ok && (bitMask&int(common.SqlException) == 0) {
-			if sep.Server == "mysql" {
-				ar := model.NewAttackResult(model.InterceptCodeToString(ic), sep.buildPluginMessage(), "go_builtin_plugin", "sql_exception", 100)
-				results = append(results, ar)
-			}
+	for _, opt := range opts {
+		if opt(sep) {
+			return results
 		}
+	}
+	if sep.Server == "mysql" {
+		ic := openrasp.GetAction().Get(sep.GetType())
+		ar := model.NewAttackResult(model.InterceptCodeToString(ic), sep.buildPluginMessage(), "go_builtin_plugin", sep.GetTypeString(), 100)
+		results = append(results, ar)
 	}
 	return results
 }

@@ -161,7 +161,7 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 		shouldBlock := false
 		requestInfo, ok := gls.Get("requestInfo").(*model.RequestInfo)
 		if ok {
-			attackResults := sqlErrorParam.AttackCheck()
+			attackResults := sqlErrorParam.AttackCheck(openrasp.IgnoreActionOption, openrasp.WhitelistOption)
 			for _, attackResult := range attackResults {
 				if interceptCode := attackResult.GetInterceptState(); interceptCode != model.Ignore {
 					attackLog := model.AttackLog{
@@ -177,7 +177,7 @@ func (d *wrapDriver) interceptError(param string, err *error) {
 						ServerIp:     openrasp.GetGlobals().HttpAddr,
 						EventTime:    utils.CurrentISO8601Time(),
 						EventType:    "attack",
-						AttackType:   "sql_exception",
+						AttackType:   sqlErrorParam.GetTypeString(),
 					}
 					attackLogString := attackLog.String()
 					if len(attackLogString) > 0 {
