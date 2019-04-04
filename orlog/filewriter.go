@@ -10,6 +10,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/baidu-security/openrasp-golang/utils"
 )
 
 const (
@@ -31,11 +33,16 @@ type FileWriter struct {
 }
 
 func NewFileWriter(filename string, maxBackups int, tokenBucket *TokenBucket) *FileWriter {
+	lastModTime := currentTime()
+	lastModified, existed := utils.GetLastModified(filename)
+	if existed {
+		lastModTime = lastModified
+	}
 	logger := &FileWriter{
 		filename:     filename,
 		maxBackups:   maxBackups,
 		tokenBucket:  tokenBucket,
-		lastedSuffix: currentTime().Format(backupFormat),
+		lastedSuffix: lastModTime.Format(backupFormat),
 	}
 	return logger
 }
