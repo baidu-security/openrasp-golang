@@ -2,6 +2,7 @@ package openrasp
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -24,7 +25,12 @@ var cloudManager *cloud.Client
 var complete bool
 
 func init() {
-	workSpace = common.NewWorkSpace()
+	executeDir, err := getExecutableDir()
+	if err != nil {
+		log.Printf("Unable to get execute dir, cuz of %v", err)
+		return
+	}
+	workSpace = common.NewWorkSpace(executeDir)
 	workSpace.Init()
 	if !workSpace.Active() {
 		log.Printf("Fail to init workspace.")
@@ -160,4 +166,12 @@ func GetPluginManager() *PluginManager {
 
 func GetCloudManager() *cloud.Client {
 	return cloudManager
+}
+
+func getExecutableDir() (string, error) {
+	ex, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Dir(ex), nil
 }

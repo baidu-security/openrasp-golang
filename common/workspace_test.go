@@ -9,59 +9,52 @@ import (
 	"github.com/baidu-security/openrasp-golang/test"
 )
 
-func TestWorkDir(t *testing.T) {
-	wd, _ := getExecutableDir()
-	binDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		t.Errorf("Fail to get binDir.")
-	}
-	if wd != binDir {
-		t.Errorf("Work directory may be wrong.")
-	}
-}
-
 func TestWorkDirInitAccessable(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
 	testDir := test.TempMkdir(t)
 	defer os.RemoveAll(testDir)
 	subDir := filepath.Join(testDir, "accessable")
 	os.Mkdir(subDir, 0755)
-	err := workSpace.workDirs.init(subDir, workSpace.register)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
+	err := workSpace.workDirs.init()
 	if err != nil {
 		t.Errorf("Fail to init.")
 	}
 }
 
 func TestWorkDirInitAlreadyInitialized(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
 	testDir := test.TempMkdir(t)
 	defer os.RemoveAll(testDir)
 	subDir := filepath.Join(testDir, "accessable")
 	os.Mkdir(subDir, 0755)
-	err := workSpace.workDirs.init(subDir, workSpace.register)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
+	err := workSpace.workDirs.init()
 	if err != nil {
 		t.Errorf("Fail to init.")
 	}
-	err = workSpace.workDirs.init(subDir, workSpace.register)
+	err = workSpace.workDirs.init()
 	if err != nil {
 		t.Errorf("Fail to init.")
 	}
 }
 
 func TestWorkDirInitNotAccessable(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
 	testDir := test.TempMkdir(t)
 	defer os.RemoveAll(testDir)
 	subDir := filepath.Join(testDir, "notaccessable")
 	os.Mkdir(subDir, 0444)
-	err := workSpace.workDirs.init(subDir, workSpace.register)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
+	err := workSpace.workDirs.init()
 	if err == nil {
 		t.Errorf("Init should return error.")
 	}
 }
 
 func TestWorkSpaceInitClear(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
+	testDir := test.TempMkdir(t)
+	defer os.RemoveAll(testDir)
+	subDir := filepath.Join(testDir, "accessable")
+	os.Mkdir(subDir, 0755)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
 	workSpace.Init()
 	if !workSpace.Active() {
 		t.Errorf("Actice() should return true.")
@@ -81,7 +74,11 @@ func TestWorkSpaceInitClear(t *testing.T) {
 }
 
 func TestWorkSpaceWithoutInit(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
+	testDir := test.TempMkdir(t)
+	defer os.RemoveAll(testDir)
+	subDir := filepath.Join(testDir, "accessable")
+	os.Mkdir(subDir, 0755)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
 	if workSpace.Active() {
 		t.Errorf("Actice() should return false after work space clear.")
 	}
@@ -100,7 +97,11 @@ func (tl *testListener) OnUpdate(absPath string) {
 }
 
 func TestWorkSpaceInitWatch(t *testing.T) {
-	var workSpace *WorkSpace = NewWorkSpace()
+	testDir := test.TempMkdir(t)
+	defer os.RemoveAll(testDir)
+	subDir := filepath.Join(testDir, "accessable")
+	os.Mkdir(subDir, 0755)
+	var workSpace *WorkSpace = NewWorkSpace(subDir)
 	workSpace.Init()
 	if !workSpace.Active() {
 		t.Errorf("Actice() should return true.")

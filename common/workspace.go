@@ -2,10 +2,7 @@ package common
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"sync"
-	"syscall"
 
 	"github.com/baidu-security/openrasp-golang/notify"
 )
@@ -30,7 +27,7 @@ type NotifyListener interface {
 }
 
 type WorkSpace struct {
-	workDirs WorkDirInfo
+	workDirs *WorkDirInfo
 	dirMap   map[WorkDirCode]*codeInfo
 	mu       sync.RWMutex
 	watcher  *notify.Watcher
@@ -38,97 +35,70 @@ type WorkSpace struct {
 	active   bool
 }
 
-type WorkDirInfo struct {
-	name string
-	mode os.FileMode
-	code WorkDirCode
-	subs []WorkDirInfo
-}
-
 type codeInfo struct {
-	path      string
+	workDir   *WorkDirInfo
 	listeners []NotifyListener
 }
 
-func NewWorkSpace() *WorkSpace {
+func NewWorkSpace(baseDir string) *WorkSpace {
 	newWatcher, _ := notify.NewWatcher()
+	workDirMap := make(map[WorkDirCode]*codeInfo)
+
+	raspDir := NewWorkDirInfo(baseDir, "rasp", 0755)
+	workDirMap[Root] = newCodeInfo(raspDir)
+
+	assetsDir := NewWorkDirInfo(raspDir.absPath(), "assets", 0755)
+	workDirMap[Assets] = newCodeInfo(assetsDir)
+	raspDir.appendSubDir(assetsDir)
+
+	confDir := NewWorkDirInfo(raspDir.absPath(), "conf", 0777)
+	workDirMap[Conf] = newCodeInfo(confDir)
+	raspDir.appendSubDir(confDir)
+
+	localeDir := NewWorkDirInfo(raspDir.absPath(), "locale", 0755)
+	workDirMap[Locale] = newCodeInfo(localeDir)
+	raspDir.appendSubDir(localeDir)
+
+	logsDir := NewWorkDirInfo(raspDir.absPath(), "logs", 0755)
+	workDirMap[Logs] = newCodeInfo(logsDir)
+	raspDir.appendSubDir(logsDir)
+
+	logAlarmDir := NewWorkDirInfo(logsDir.absPath(), "alarm", 0777)
+	workDirMap[LogAlarm] = newCodeInfo(logAlarmDir)
+	logsDir.appendSubDir(logAlarmDir)
+
+	logPluginDir := NewWorkDirInfo(logsDir.absPath(), "plugin", 0777)
+	workDirMap[LogPlugin] = newCodeInfo(logPluginDir)
+	logsDir.appendSubDir(logPluginDir)
+
+	logPolicyDir := NewWorkDirInfo(logsDir.absPath(), "policy", 0777)
+	workDirMap[LogPolicy] = newCodeInfo(logPolicyDir)
+	logsDir.appendSubDir(logPolicyDir)
+
+	logRaspDir := NewWorkDirInfo(logsDir.absPath(), "rasp", 0777)
+	workDirMap[LogRasp] = newCodeInfo(logRaspDir)
+	logsDir.appendSubDir(logRaspDir)
+
+	pluginsDir := NewWorkDirInfo(raspDir.absPath(), "plugins", 0777)
+	workDirMap[Plugins] = newCodeInfo(pluginsDir)
+	raspDir.appendSubDir(pluginsDir)
+
 	return &WorkSpace{
-		workDirs: WorkDirInfo{
-			"rasp",
-			0755,
-			Root,
-			[]WorkDirInfo{
-				WorkDirInfo{
-					"assets",
-					0755,
-					Assets,
-					[]WorkDirInfo{},
-				},
-				WorkDirInfo{
-					"conf",
-					0755,
-					Conf,
-					[]WorkDirInfo{},
-				},
-				WorkDirInfo{
-					"locale",
-					0755,
-					Locale,
-					[]WorkDirInfo{},
-				},
-				WorkDirInfo{
-					"logs",
-					0755,
-					Logs,
-					[]WorkDirInfo{
-						WorkDirInfo{
-							"alarm",
-							0755,
-							LogAlarm,
-							[]WorkDirInfo{},
-						},
-						WorkDirInfo{
-							"plugin",
-							0755,
-							LogPlugin,
-							[]WorkDirInfo{},
-						},
-						WorkDirInfo{
-							"policy",
-							0755,
-							LogPolicy,
-							[]WorkDirInfo{},
-						},
-						WorkDirInfo{
-							"rasp",
-							0755,
-							LogRasp,
-							[]WorkDirInfo{},
-						},
-					},
-				},
-				WorkDirInfo{
-					"plugins",
-					0755,
-					Plugins,
-					[]WorkDirInfo{},
-				},
-			},
-		},
-		dirMap:  make(map[WorkDirCode]*codeInfo),
-		watcher: newWatcher,
-		active:  false,
+		workDirs: raspDir,
+		dirMap:   workDirMap,
+		watcher:  newWatcher,
+		active:   false,
 	}
 }
 
-func newCodeInfo(absPath string) *codeInfo {
+func newCodeInfo(workDir *WorkDirInfo) *codeInfo {
 	return &codeInfo{
-		absPath,
+		workDir,
 		make([]NotifyListener, 0)}
 }
 
 func (ci *codeInfo) getPath() string {
-	return ci.path
+	return ci.workDir.absPath()
 }
 
 func (ci *codeInfo) attachListener(listener NotifyListener) {
@@ -143,73 +113,24 @@ func (ci *codeInfo) notify(absPath string) {
 	}
 }
 
-func (wdi *WorkDirInfo) init(base string, registerFunc func(code WorkDirCode, absPath string)) error {
-	currentDir := filepath.Join(base, wdi.name)
-	if _, err := os.Stat(currentDir); err == nil {
-		err := syscall.Access(currentDir, syscall.O_RDWR)
-		if err != nil {
-			return err
-		} else {
-			registerFunc(wdi.code, currentDir)
-		}
-	} else if os.IsNotExist(err) {
-		err := os.Mkdir(currentDir, wdi.mode)
-		if err != nil {
-			return err
-		} else {
-			registerFunc(wdi.code, currentDir)
-		}
-	} else {
-		return err
-	}
-	for _, v := range wdi.subs {
-		err := v.init(currentDir, registerFunc)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (wdi *WorkDirInfo) clear(base string) error {
-	currentDir := filepath.Join(base, wdi.name)
-	return os.RemoveAll(currentDir)
-}
-
 func (ws *WorkSpace) Init() error {
-	executableDir, err := getExecutableDir()
+	err := ws.workDirs.init()
 	if err != nil {
 		return err
 	} else {
-		err := ws.workDirs.init(executableDir, ws.register)
-		if err != nil {
-			return err
-		} else {
-			ws.active = true
-			return nil
-		}
+		ws.active = true
+		return nil
 	}
 }
 
 func (ws *WorkSpace) clear() error {
-	executableDir, err := getExecutableDir()
+	err := ws.workDirs.clear()
 	if err != nil {
 		return err
 	} else {
-		err := ws.workDirs.clear(executableDir)
-		if err != nil {
-			return err
-		} else {
-			ws.active = false
-			return nil
-		}
+		ws.active = false
+		return nil
 	}
-}
-
-func (ws *WorkSpace) register(code WorkDirCode, absPath string) {
-	ws.mu.Lock()
-	defer ws.mu.Unlock()
-	ws.dirMap[code] = newCodeInfo(absPath)
 }
 
 func (ws *WorkSpace) GetDir(code WorkDirCode) (string, error) {
@@ -271,12 +192,4 @@ func buildDispatchFunc(ws *WorkSpace, code WorkDirCode) notify.EventDispatchFunc
 		defer ws.mu.Unlock()
 		ws.dirMap[code].notify(name)
 	}
-}
-
-func getExecutableDir() (string, error) {
-	ex, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Dir(ex), nil
 }
